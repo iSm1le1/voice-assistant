@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>语音 AI 助手</title>
+  <style>
+    body { font-family: -apple-system, "PingFang SC", sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; color: #333; }
+    h1 { font-size: 1.4em; }
+    button { padding: 12px 24px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; margin: 4px 4px 4px 0; }
+    #record { background: #4CAF50; color: white; }
+    #record.recording { background: #f44336; }
+    #clear { background: #e0e0e0; }
+    .box { background: #f7f7f7; padding: 12px 16px; border-radius: 8px; margin: 8px 0; min-height: 20px; white-space: pre-wrap; }
+    .label { color: #888; font-size: 0.85em; margin-top: 12px; }
+    #status { color: #888; font-size: 0.9em; min-height: 1.2em; margin-top: 12px; }
+    audio { width: 100%; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>🎤 语音 AI 助手</h1>
+  <div>
+    <button id="record">按住说话（或点一下）</button>
+    <button id="clear">清空记忆</button>
+  </div>
+  <p id="status">就绪</p>
+
+  <div class="label">你说：</div>
+  <div class="box" id="asr">—</div>
+
+  <div class="label">AI 回答：</div>
+  <div class="box" id="answer">—</div>
+
+  <audio id="player" controls></audio>
+
+  <script>
+    // 会话 id（支撑多轮记忆，存 localStorage）
+    let sessionId = localStorage.getItem('session_id');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('session_id', sessionId);
+    }
+
+    const recordBtn = document.getElementById('record');
+    const statusEl  = document.getElementById('status');
+    const asrEl     = document.getElementById('asr');
+    const answerEl  = document.getElementById('answer');
+    const player    = document.getElementById('player');
+
+    document.getElementById('clear').addEventListener('click', () => {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('session_id', sessionId);
+      asrEl.textContent = '—';
+      answerEl.textContent = '—';
+      player.src = '';
+      statusEl.textContent = '已清空记忆，开启新会话';
+    });
+
+    let mediaRecorder = null;
+    let chunks = [];
+    let recording = false;
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        chunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          sendAudio(blob);
+        };
+        mediaRecorder.start();
+        recording = true;
+        recordBtn.classList.add('recording');
+        recordBtn.textContent = '松开结束';
+        statusEl.textContent = '录音中…';
+      } catch (err) {
+        statusEl.textContent = '无法访问麦克风：' + err.message;
+      }
+    }
+
+    function stopRecording() {
+      if (recording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        recording = false;
+        recordBtn.classList.remove('recording');
+        recordBtn.textContent = '按住说话（或点一下）';
+      }
+    }
+
+    // 按住说话 / 点一下 都支持
+    recordBtn.addEventListener('mousedown', startRecording);
+    recordBtn.addEventListener('mouseup', stopRecording);
+    recordBtn.addEventListener('mouseleave', stopRecording);
+    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); startRecording(); });
+    recordBtn.addEventListener('touchend',   e => { e.preventDefault(); stopRecording(); });
+
+    async function sendAudio(blob) {
+      statusEl.textContent = '识别 + 思考 + 合成中…';
+      asrEl.textContent = '…';
+      answerEl.textContent = '…';
+      const form = new FormData();
+      form.append('file', blob, 'voice.webm');
+      form.append('session_id', sessionId);
+      try {
+        const resp = await fetch('/voice-chat', { method: 'POST', body: form });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+          throw new Error(err.detail || '请求失败');
+        }
+        const data = await resp.json();
+        asrEl.textContent = data.asr_text;
+        answerEl.textContent = data.answer;
+        const audioBlob = base64ToBlob(data.audio, 'audio/wav');
+        player.src = URL.createObjectURL(audioBlob);
+        player.play();
+        statusEl.textContent = '完成';
+      } catch (err) {
+        statusEl.textContent = '出错：' + err.message;
+      }
+    }
+
+    function base64ToBlob(b64, type) {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type });
+    }
+  </script>
+</body>
+</html>

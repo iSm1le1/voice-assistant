@@ -1,0 +1,19 @@
+# 环境变量（密钥，千万别提交）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# 日志
+logs/*.log
+
+# IDE
+.idea/
+.vscode/
+
+# 系统
+.DS_Store

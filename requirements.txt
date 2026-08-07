@@ -1,0 +1,6 @@
+openai
+dashscope
+fastapi
+uvicorn
+python-multipart
+python-dotenv
