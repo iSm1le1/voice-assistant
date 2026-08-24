@@ -44,7 +44,7 @@
     // API Key（服务端配置了 APP_API_KEY 时需要，缓存在本地）
     let apiKey = localStorage.getItem('api_key') || '';
 
-    function authHeaders(form) {
+    function authHeaders() {
       const headers = {};
       if (!apiKey) {
         apiKey = prompt('请输入访问密钥（X-API-Key）：') || '';
@@ -137,7 +137,8 @@
         const audioBlob = base64ToBlob(data.audio, 'audio/wav');
         if (player.src) URL.revokeObjectURL(player.src);
         player.src = URL.createObjectURL(audioBlob);
-        player.play();
+        // 自动播放被浏览器策略拦截时不产生未处理的 Promise 拒绝
+        player.play().catch(() => { statusEl.textContent = '完成（点击播放器收听）'; });
         statusEl.textContent = '完成';
       } catch (err) {
         statusEl.textContent = '出错：' + err.message;

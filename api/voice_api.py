@@ -10,7 +10,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 
 from config import settings
-from models.schemas import ChatResponse, HealthResponse, VoiceChatResponse
+from models.schemas import ChatResponse, ErrorResponse, HealthResponse, VoiceChatResponse
 from services import asr_service, llm_service, tts_service
 from services.conversation_service import conversation
 from utils.audio_utils import normalize_mime, validate_audio
@@ -21,9 +21,9 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 _ERROR_RESPONSES = {
-    400: {"description": "请求参数错误（如音频为空/过大）"},
-    401: {"description": "缺少或错误的 X-API-Key"},
-    500: {"description": "服务内部错误"},
+    400: {"model": ErrorResponse, "description": "请求参数错误（如音频为空/过大）"},
+    401: {"model": ErrorResponse, "description": "缺少或错误的 X-API-Key"},
+    500: {"model": ErrorResponse, "description": "服务内部错误"},
 }
 
 

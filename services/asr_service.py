@@ -48,11 +48,11 @@ def speech_to_text(audio_bytes: bytes, mime_type: str = "audio/wav") -> str:
             },
         )
     except BadRequestError as e:
-        # 上游 400 多为音频内容问题（如空音频），翻译成业务错误
-        # 让 API 层映射为 400 而非 500
+        # 上游 400 均为音频内容问题（空音频、损坏、不支持等），
+        # 翻译成业务错误让 API 层映射为 400 而非 500
         if "empty" in str(e).lower():
             raise ValueError("录音太短或没有听清声音，请再试一次") from e
-        raise
+        raise ValueError("无法识别该音频，请重新录制或更换格式") from e
 
     text = response.choices[0].message.content
     if not text:
