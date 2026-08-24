@@ -53,8 +53,20 @@ class Settings:
         }
 
         # ---- 服务 ----
-        self.HOST = "0.0.0.0"
-        self.PORT = 8000
+        # 绑定地址默认仅本机；需要对外时在 .env 里改 HOST
+        self.HOST = os.getenv("HOST", "127.0.0.1")
+        self.PORT = int(os.getenv("PORT", "8000"))
+        # 开发模式（uvicorn reload）
+        self.DEBUG = os.getenv("DEBUG", "0") == "1"
+
+        # ---- 鉴权 ----
+        # 设置后所有接口要求请求头 X-API-Key；留空则不鉴权（本地开发）
+        self.APP_API_KEY = os.getenv("APP_API_KEY", "")
+
+        # ---- 会话存储 ----
+        # 会话过期时间（秒）与最大并发会话数，防止内存无限增长
+        self.SESSION_TTL_SECONDS = 30 * 60
+        self.MAX_SESSIONS = 1000
 
     def validate(self) -> None:
         """启动时校验密钥，缺了直接报错（沿用原 app.py 行为）。"""

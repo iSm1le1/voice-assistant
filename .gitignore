@@ -8,8 +8,8 @@ __pycache__/
 venv/
 .venv/
 
-# 日志
-logs/*.log
+# 日志（含 TimedRotatingFileHandler 滚动出的 app.log.2026-08-07 等）
+logs/app.log*
 
 # IDE
 .idea/

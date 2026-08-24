@@ -1,6 +1,6 @@
-openai
-dashscope
-fastapi
-uvicorn
-python-multipart
-python-dotenv
+fastapi==0.140.0
+uvicorn==0.51.0
+openai==2.15.0
+dashscope==1.26.5
+python-multipart==0.0.32
+python-dotenv==1.1.0

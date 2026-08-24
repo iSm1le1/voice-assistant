@@ -6,9 +6,12 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# 默认超时高达 600s，显式收紧并允许少量重试，防止上游挂起占满线程池
 _client = OpenAI(
     api_key=settings.DEEPSEEK_API_KEY,
     base_url=settings.DEEPSEEK_BASE_URL,
+    timeout=60,
+    max_retries=2,
 )
 
 

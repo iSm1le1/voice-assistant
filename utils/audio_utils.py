@@ -18,6 +18,10 @@ def validate_audio(size: int, content_type: str | None) -> None:
     if size <= 0:
         raise ValueError("音频文件为空")
 
+    # WAV 头至少 44 字节，100 字节以内必然无声（快速点按录音键的场景）
+    if size < 100:
+        raise ValueError("录音太短或没有听清声音，请再试一次")
+
     if size > settings.AUDIO_MAX_BYTES:
         raise ValueError(
             f"音频过大（{size} 字节），上限 "
